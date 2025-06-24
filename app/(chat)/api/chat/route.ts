@@ -7,7 +7,6 @@ import {
 } from 'ai';
 import { z } from 'zod';
 
-import { auth } from '@/app/(auth)/auth';
 import { customModel } from '@/lib/ai';
 import { models } from '@/lib/ai/models';
 import {
@@ -61,11 +60,6 @@ export async function POST(request: Request) {
     modelApiKey?: string;
   } = await request.json();
 
-  const session = await auth();
-
-  if (!session || !session.user || !session.user.id) {
-    return new Response('Unauthorized', { status: 401 });
-  }
 
   const model = models.find((model) => model.id === modelId);
 
@@ -88,7 +82,7 @@ export async function POST(request: Request) {
 
   if (!chat) {
     const title = await generateTitleFromUserMessage({ message: userMessage, modelApiKey });
-    await saveChat({ id, userId: session.user.id, title });
+    await saveChat({ id, title });
   }
 
   const userMessageId = generateUUID();
@@ -216,38 +210,36 @@ export async function POST(request: Request) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
           // save the response
-          if (session.user?.id) {
-            try {
-              const responseMessagesWithoutIncompleteToolCalls = sanitizeResponseMessages(response.messages);
+          try {
+            const responseMessagesWithoutIncompleteToolCalls = sanitizeResponseMessages(response.messages);
 
-              if (responseMessagesWithoutIncompleteToolCalls.length > 0) {
-                await saveMessages({
-                  messages: responseMessagesWithoutIncompleteToolCalls.map(
-                    (message) => {
-                      const messageId = generateUUID();
+            if (responseMessagesWithoutIncompleteToolCalls.length > 0) {
+              await saveMessages({
+                messages: responseMessagesWithoutIncompleteToolCalls.map(
+                  (message) => {
+                    const messageId = generateUUID();
 
-                      if (message.role === 'assistant') {
-                        dataStream.writeMessageAnnotation({
-                          messageIdFromServer: messageId,
-                        });
-                      }
+                    if (message.role === 'assistant') {
+                      dataStream.writeMessageAnnotation({
+                        messageIdFromServer: messageId,
+                      });
+                    }
 
-                      return {
-                        id: messageId,
-                        chatId: id,
-                        role: message.role,
-                        content: message.content,
-                        createdAt: new Date(),
-                      };
-                    },
-                  ),
-                });
-              } else {
-                console.log('No valid messages to save');
-              }
-            } catch (error) {
-              console.error('Failed to save chat:', error);
+                    return {
+                      id: messageId,
+                      chatId: id,
+                      role: message.role,
+                      content: message.content,
+                      createdAt: new Date(),
+                    };
+                  },
+                ),
+              });
+            } else {
+              console.log('No valid messages to save');
             }
+          } catch (error) {
+            console.error('Failed to save chat:', error);
           }
         },
         tools: {
@@ -521,21 +513,8 @@ export async function DELETE(request: Request) {
     return new Response('Not Found', { status: 404 });
   }
 
-  const session = await auth();
-
-  if (!session || !session.user) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
   try {
-    const chat = await getChatById({ id });
-
-    if (chat.userId !== session.user.id) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-
     await deleteChatById({ id });
-
     return new Response('Chat deleted', { status: 200 });
   } catch (error) {
     return new Response('An error occurred while processing your request', {

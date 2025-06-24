@@ -1,20 +1,16 @@
 import 'server-only';
 
-import { genSaltSync, hashSync } from 'bcrypt-ts';
-import { and, asc, desc, eq, gt, gte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
 import {
-  user,
   chat,
-  type User,
   document,
   type Suggestion,
   suggestion,
   type Message,
   message,
-  vote,
 } from './schema';
 import { BlockKind } from '@/components/block';
 
@@ -26,41 +22,18 @@ import { BlockKind } from '@/components/block';
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
 
-export async function getUser(email: string): Promise<Array<User>> {
-  try {
-    return await db.select().from(user).where(eq(user.email, email));
-  } catch (error) {
-    console.error('Failed to get user from database');
-    throw error;
-  }
-}
-
-export async function createUser(email: string, password: string) {
-  const salt = genSaltSync(10);
-  const hash = hashSync(password, salt);
-
-  try {
-    return await db.insert(user).values({ email, password: hash });
-  } catch (error) {
-    console.error('Failed to create user in database');
-    throw error;
-  }
-}
 
 export async function saveChat({
   id,
-  userId,
   title,
 }: {
   id: string;
-  userId: string;
   title: string;
 }) {
   try {
     return await db.insert(chat).values({
       id,
       createdAt: new Date(),
-      userId,
       title,
     });
   } catch (error) {
@@ -71,9 +44,7 @@ export async function saveChat({
 
 export async function deleteChatById({ id }: { id: string }) {
   try {
-    await db.delete(vote).where(eq(vote.chatId, id));
     await db.delete(message).where(eq(message.chatId, id));
-
     return await db.delete(chat).where(eq(chat.id, id));
   } catch (error) {
     console.error('Failed to delete chat by id from database');
@@ -81,15 +52,14 @@ export async function deleteChatById({ id }: { id: string }) {
   }
 }
 
-export async function getChatsByUserId({ id }: { id: string }) {
+export async function getAllChats() {
   try {
     return await db
       .select()
       .from(chat)
-      .where(eq(chat.userId, id))
       .orderBy(desc(chat.createdAt));
   } catch (error) {
-    console.error('Failed to get chats by user from database');
+    console.error('Failed to get chats from database');
     throw error;
   }
 }
@@ -126,85 +96,18 @@ export async function getMessagesByChatId({ id }: { id: string }) {
   }
 }
 
-export async function getTotalUserMessagesByUserId({ userId }: { userId: string | undefined }) {
-  if (!userId) {
-    return 0;
-  }
 
-  try {
-    const [result] = await db
-      .select({
-        count: sql<number>`count(*)::int`,
-      })
-      .from(message)
-      .innerJoin(chat, eq(message.chatId, chat.id))
-      .where(
-        and(
-          eq(chat.userId, userId),
-          eq(message.role, 'user')
-        )
-      );
-
-    return result?.count ?? 0;
-  } catch (error) {
-    console.error('Failed to get total messages by user from database');
-    throw error;
-  }
-}
-
-export async function voteMessage({
-  chatId,
-  messageId,
-  type,
-}: {
-  chatId: string;
-  messageId: string;
-  type: 'up' | 'down';
-}) {
-  try {
-    const [existingVote] = await db
-      .select()
-      .from(vote)
-      .where(and(eq(vote.messageId, messageId)));
-
-    if (existingVote) {
-      return await db
-        .update(vote)
-        .set({ isUpvoted: type === 'up' })
-        .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
-    }
-    return await db.insert(vote).values({
-      chatId,
-      messageId,
-      isUpvoted: type === 'up',
-    });
-  } catch (error) {
-    console.error('Failed to upvote message in database', error);
-    throw error;
-  }
-}
-
-export async function getVotesByChatId({ id }: { id: string }) {
-  try {
-    return await db.select().from(vote).where(eq(vote.chatId, id));
-  } catch (error) {
-    console.error('Failed to get votes by chat id from database', error);
-    throw error;
-  }
-}
 
 export async function saveDocument({
   id,
   title,
   kind,
   content,
-  userId,
 }: {
   id: string;
   title: string;
   kind: BlockKind;
   content: string;
-  userId: string;
 }) {
   try {
     return await db.insert(document).values({
@@ -212,7 +115,6 @@ export async function saveDocument({
       title,
       kind,
       content,
-      userId,
       createdAt: new Date(),
     });
   } catch (error) {

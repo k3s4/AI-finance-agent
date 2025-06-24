@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import { Toaster } from 'sonner';
-import { AuthCheck } from '@/app/components/AuthCheck';
 
 import { ThemeProvider } from '@/components/providers';
-import { SessionProvider } from 'next-auth/react';
 import { Analytics } from "@vercel/analytics/react"
 
 import './globals.css';
@@ -64,19 +62,16 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <SessionProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <AuthCheck />
-            <Toaster position="top-center" />
-            {children}
-          </ThemeProvider>
-          <Analytics />
-        </SessionProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Toaster position="top-center" />
+          {children}
+        </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );

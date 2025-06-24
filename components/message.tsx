@@ -5,7 +5,6 @@ import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useState } from 'react';
 
-import type { Vote } from '@/lib/db/schema';
 
 import { PencilEditIcon, SparklesIcon } from './icons';
 import { Markdown } from './markdown';
@@ -25,7 +24,6 @@ import { News } from './ui/news';
 const PurePreviewMessage = ({
   chatId,
   message,
-  vote,
   isLoading,
   setMessages,
   reload,
@@ -33,7 +31,6 @@ const PurePreviewMessage = ({
 }: {
   chatId: string;
   message: Message;
-  vote: Vote | undefined;
   isLoading: boolean;
   setMessages: (
     messages: Message[] | ((messages: Message[]) => Message[]),
@@ -173,7 +170,6 @@ const PurePreviewMessage = ({
                 key={`action-${message.id}`}
                 chatId={chatId}
                 message={message}
-                vote={vote}
                 isLoading={isLoading}
               />
             )}
@@ -196,7 +192,6 @@ export const PreviewMessage = memo(
       )
     )
       return false;
-    if (!equal(prevProps.vote, nextProps.vote)) return false;
 
     return true;
   },

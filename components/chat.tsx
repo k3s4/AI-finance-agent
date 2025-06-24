@@ -6,7 +6,6 @@ import { useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 
 import { ChatHeader } from '@/components/chat-header';
-import type { Vote } from '@/lib/db/schema';
 import { fetcher, track } from '@/lib/utils';
 import { getFinancialDatasetsApiKey, getLocalOpenAIApiKey } from '@/lib/db/api-keys';
 
@@ -96,10 +95,6 @@ export function Chat({
     }
   };
 
-  const { data: votes } = useSWR<Array<Vote>>(
-    `/api/vote?chatId=${id}`,
-    fetcher,
-  );
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isBlockVisible = useBlockSelector((state) => state.isVisible);
@@ -117,7 +112,6 @@ export function Chat({
         <Messages
           chatId={id}
           isLoading={isLoading}
-          votes={votes}
           messages={messages}
           setMessages={setMessages}
           reload={reload}
@@ -157,7 +151,6 @@ export function Chat({
         messages={messages}
         setMessages={setMessages}
         reload={reload}
-        votes={votes}
         isReadonly={isReadonly}
       />
 

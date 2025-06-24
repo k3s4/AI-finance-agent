@@ -1,11 +1,9 @@
 'use client';
 
-import type { User } from 'next-auth';
 import { useRouter } from 'next/navigation';
 
 import { PlusIcon } from '@/components/icons';
 import { SidebarHistory } from '@/components/sidebar-history';
-import { SidebarUserNav } from '@/components/sidebar-user-nav';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -19,7 +17,7 @@ import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { useQueryLoading } from '@/hooks/use-query-loading';
 
-export function AppSidebar({ user }: { user: User | undefined }) {
+export function AppSidebar() {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
   const { setQueryLoading } = useQueryLoading();
@@ -64,10 +62,10 @@ export function AppSidebar({ user }: { user: User | undefined }) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarHistory user={user} />
+        <SidebarHistory />
       </SidebarContent>
       <SidebarFooter>
-        {user && <SidebarUserNav user={user} />}
+        {/* Footer content if needed */}
       </SidebarFooter>
     </Sidebar>
   );

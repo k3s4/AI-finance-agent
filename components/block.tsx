@@ -17,7 +17,7 @@ import {
 import useSWR, { useSWRConfig } from 'swr';
 import { useDebounceCallback, useWindowSize } from 'usehooks-ts';
 
-import type { Document, Suggestion, Vote } from '@/lib/db/schema';
+import type { Document, Suggestion } from '@/lib/db/schema';
 import { cn, fetcher } from '@/lib/utils';
 
 import { DiffView } from './diffview';
@@ -71,7 +71,6 @@ function PureBlock({
   messages,
   setMessages,
   reload,
-  votes,
   isReadonly,
 }: {
   chatId: string;
@@ -83,7 +82,6 @@ function PureBlock({
   setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
   messages: Array<Message>;
   setMessages: Dispatch<SetStateAction<Array<Message>>>;
-  votes: Array<Vote> | undefined;
   append: (
     message: Message | CreateMessage,
     chatRequestOptions?: ChatRequestOptions,
@@ -323,7 +321,6 @@ function PureBlock({
                 <BlockMessages
                   chatId={chatId}
                   isLoading={isLoading}
-                  votes={votes}
                   messages={messages}
                   setMessages={setMessages}
                   reload={reload}
@@ -556,7 +553,6 @@ function PureBlock({
 
 export const Block = memo(PureBlock, (prevProps, nextProps) => {
   if (prevProps.isLoading !== nextProps.isLoading) return false;
-  if (!equal(prevProps.votes, nextProps.votes)) return false;
   if (prevProps.input !== nextProps.input) return false;
   if (!equal(prevProps.messages, nextProps.messages.length)) return false;
 
